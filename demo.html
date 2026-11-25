@@ -59,15 +59,25 @@
           <div class="panel-heading"><div><p class="eyebrow">Cobertura territorial</p><h2 id="territory-title">Ocho regiones</h2></div><button id="national" class="secondary" type="button" aria-pressed="true">Ver total nacional</button></div>
           <div class="map-layout">
             <div class="map-surface">
-              <svg id="region-map" viewBox="0 0 510 407" role="group" aria-label="Mapa interactivo de las ocho regiones de Guatemala">
-                <defs><linearGradient id="region-fill" x2="0.2" y2="1"><stop stop-color="#a8c4c3"></stop><stop offset="1" stop-color="#547f83"></stop></linearGradient></defs>
-                <g id="map-depth" aria-hidden="true" transform="translate(0 8)"></g>
-                <g id="map-regions"></g>
+              <svg id="region-map" viewBox="0 0 560 480" role="group" aria-label="Mapa interactivo de las ocho regiones de Guatemala">
+                <defs>
+                  <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40"/></pattern>
+                </defs>
+                <rect class="map-grid" width="560" height="480" fill="url(#map-grid)" aria-hidden="true"/>
+                <g class="map-compass" transform="translate(519 45)" aria-hidden="true">
+                  <text text-anchor="middle" y="-6">N</text><path d="M0 1 L-5 15 L0 12 L5 15Z"/>
+                </g>
+                <g id="map-camera">
+                  <path id="map-country" aria-hidden="true"/>
+                  <g id="map-regions"></g>
+                  <path id="map-departments" aria-hidden="true"/>
+                  <g id="map-labels" aria-hidden="true"></g>
+                </g>
               </svg>
             </div>
             <div id="region-grid" class="region-grid" aria-label="Lista de regiones"></div>
           </div>
-          <p class="note">Contornos simplificados para la demo. Población total de todas las edades del Censo 2018 como referencia operativa. <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">Fuente INE, cuadro A4.1</a></p>
+          <p class="note">Límites <a href="https://www.geoboundaries.org/api/current/gbOpen/GTM/ADM1/">geoBoundaries</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (<a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>). Población total de todas las edades · <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">INE, Censo 2018</a>.</p>
         </section>
         <section class="panel results" aria-labelledby="result-title">
           <p class="eyebrow">Escenario calculado</p>

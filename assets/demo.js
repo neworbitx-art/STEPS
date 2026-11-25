@@ -13,11 +13,19 @@ let current = null;
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const mapLayer = document.querySelector('#map-regions');
-const depthLayer = document.querySelector('#map-depth');
+const camera = document.querySelector('#map-camera');
+const labelLayer = document.querySelector('#map-labels');
+document.querySelector('#map-country').setAttribute('d', mapCountryOutline);
+document.querySelector('#map-departments').setAttribute('d', mapDepartmentBorders);
 const regionControls = [];
 
 function selectRegion(id) {
   selection = id;
+  const geometry = mapShapes[id];
+  const [x, y] = geometry?.label ?? [280, 240];
+  camera.style.setProperty('--focus-x', ((280 - x) * .1) + 'px');
+  camera.style.setProperty('--focus-y', ((240 - y) * .08) + 'px');
+  camera.dataset.focused = String(Boolean(geometry));
   showResults();
 }
 
@@ -34,10 +42,6 @@ for (const region of regions) {
   grid.append(button);
 
   const geometry = mapShapes[region.id];
-  const depth = document.createElementNS(svgNamespace, 'path');
-  depth.setAttribute('d', geometry.path);
-  depthLayer.append(depth);
-
   const area = document.createElementNS(svgNamespace, 'g');
   area.classList.add('map-region');
   area.dataset.region = region.id;
@@ -51,22 +55,33 @@ for (const region of regions) {
       selectRegion(region.id);
     }
   });
-  const path = document.createElementNS(svgNamespace, 'path');
-  path.setAttribute('d', geometry.path);
-  const marker = document.createElementNS(svgNamespace, 'text');
-  marker.setAttribute('x', geometry.label[0]);
-  marker.setAttribute('y', geometry.label[1]);
-  marker.setAttribute('aria-hidden', 'true');
-  marker.textContent = region.code;
-  area.append(path, marker);
+  const fill = document.createElementNS(svgNamespace, 'path');
+  fill.setAttribute('class', 'region-fill');
+  fill.setAttribute('d', geometry.path);
+  const outline = document.createElementNS(svgNamespace, 'path');
+  outline.setAttribute('class', 'region-outline');
+  outline.setAttribute('d', geometry.outline);
+  area.append(fill, outline);
   mapLayer.append(area);
-  regionControls.push(button, area);
+
+  const marker = document.createElementNS(svgNamespace, 'g');
+  marker.setAttribute('class', 'map-marker');
+  marker.setAttribute('transform', 'translate(' + geometry.label.join(' ') + ')');
+  marker.dataset.region = region.id;
+  const halo = document.createElementNS(svgNamespace, 'circle');
+  halo.setAttribute('class', 'marker-halo');
+  halo.setAttribute('r', '15');
+  const disc = document.createElementNS(svgNamespace, 'circle');
+  disc.setAttribute('class', 'marker-disc');
+  disc.setAttribute('r', '13');
+  const caption = document.createElementNS(svgNamespace, 'text');
+  caption.textContent = region.code;
+  marker.append(halo, disc, caption);
+  labelLayer.append(marker);
+  regionControls.push(button, area, marker);
 }
 
-nationalButton.addEventListener('click', () => {
-  selection = null;
-  showResults();
-});
+nationalButton.addEventListener('click', () => selectRegion(null));
 
 function readConfig() {
   const values = form.elements;
