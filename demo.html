@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es-GT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Territorio STEPS · Simulador</title>
+  <link rel="stylesheet" href="./assets/site.css">
+  <script src="./assets/territory.js" defer></script>
+  <script src="./assets/planner.js" defer></script>
+  <script src="./assets/demo.js" defer></script>
+</head>
+<body>
+  <header class="site-header"><nav class="nav wrap" aria-label="Navegación principal">
+    <a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true"></span>Territorio <strong>STEPS</strong></a>
+    <div class="nav-links"><a href="./index.html">Proyecto</a><a href="./demo.html" aria-current="page">Demo</a></div>
+  </nav></header>
+  <main class="wrap demo">
+    <header class="demo-header">
+      <div><p class="eyebrow">Demo operativa · Guatemala</p><h1>Simulador de levantamiento</h1><p>Calcula la muestra para el paso 2 y comprueba si hay cupos para el paso 3.</p></div>
+      <button class="button" type="button" id="export">Descargar CSV</button>
+    </header>
+    <noscript>Activa JavaScript para usar el simulador.</noscript>
+    <div class="dashboard">
+      <section class="panel settings" aria-labelledby="config-title">
+        <h2 id="config-title">Supuestos del escenario</h2>
+        <form id="settings">
+          <label>Dominio de estudio<select name="domain"><option value="national">Nacional</option><option value="regional">Ocho dominios regionales</option></select></label>
+          <fieldset><legend>Diseño muestral · paso 2</legend>
+            <div class="form-grid">
+              <label>Prevalencia esperada (%)<input name="prevalence" type="number" value="50" min="1" max="99" required></label>
+              <label>Error absoluto (p. p.)<input name="margin" type="number" value="5" min="1" max="25" step="0.1" required></label>
+              <label>Efecto de diseño (DEFF)<input name="deff" type="number" value="1.5" min="1" max="10" step="0.1" required></label>
+            </div>
+            <p class="note">Presión arterial elevada · confianza del 95%.</p>
+          </fieldset>
+          <fieldset><legend>Participación esperada</legend>
+            <div class="form-grid">
+              <label>Entrevista de seleccionados (%)<input name="interview" type="number" value="90" min="1" max="100" required></label>
+              <label>Paso 2 completo de citados (%)<input name="attendance" type="number" value="78" min="1" max="100" required></label>
+            </div>
+            <p class="note">El escenario supone una cita por entrevista completa.</p>
+          </fieldset>
+          <fieldset><legend>Bioquímica · paso 3</legend>
+            <label>Modalidad<select name="mode"><option value="portable">Química seca capilar</option><option value="lab">Laboratorio de referencia</option><option value="off">Paso 3 deshabilitado</option></select></label>
+            <div id="bio-fields" class="form-grid">
+              <label>Elegibles del paso 2 a invitar (%)<input name="invite" type="number" value="60" min="0" max="100" required></label>
+              <label>Cupos totales del operativo<input name="capacity" type="number" value="300" min="0" max="10000000" required></label>
+              <label>Mediciones válidas con cupo (%)<input name="valid" type="number" value="80" min="0" max="100" required></label>
+            </div>
+            <p id="mode-note" class="note"></p>
+          </fieldset>
+          <p class="form-error" id="form-error" role="status" hidden>Completa los valores dentro de los rangos indicados para actualizar el escenario.</p>
+          <button class="secondary" type="reset">Restablecer supuestos</button>
+        </form>
+      </section>
+      <div class="workspace">
+        <section class="panel territory" aria-labelledby="territory-title">
+          <div class="panel-heading"><div><p class="eyebrow">Cobertura territorial</p><h2 id="territory-title">Ocho regiones</h2></div><button id="national" class="secondary" type="button" aria-pressed="true">Ver total nacional</button></div>
+          <div id="region-grid" class="region-grid" aria-label="Seleccionar región"></div>
+          <p class="note">Esquema territorial. Población total de todas las edades del Censo 2018 como referencia operativa. <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">Fuente INE, cuadro A4.1</a></p>
+        </section>
+        <section class="panel results" aria-labelledby="result-title">
+          <p class="eyebrow">Escenario calculado</p>
+          <h2 id="result-title">Total nacional</h2>
+          <p id="summary" class="note" role="status"></p>
+          <div class="metrics">
+            <div><span>Adultos a seleccionar</span><strong id="result-sample">—</strong></div>
+            <div><span>Población censada · 2018</span><strong id="result-population">—</strong></div>
+            <div><span>Brecha de cupos · paso 3</span><strong id="result-gap">—</strong></div>
+          </div>
+          <ol class="funnel">
+            <li><div><span>1. Entrevista y cita · INE</span><strong id="result-step1">—</strong></div><progress id="bar1" max="100" value="0" aria-label="Entrevistas previstas"></progress></li>
+            <li><div><span>2. Tamizaje completo en sede · MSPAS</span><strong id="result-step2">—</strong></div><progress id="bar2" max="100" value="0" aria-label="Tamizajes previstos"></progress></li>
+            <li><div><span>3. Mediciones bioquímicas válidas · MSPAS</span><strong id="result-step3">—</strong></div><progress id="bar3" max="100" value="0" aria-label="Mediciones bioquímicas válidas previstas"></progress></li>
+          </ol>
+          <p id="bio-detail" class="note"></p>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer class="footer wrap"><span>Escenario ilustrativo · Sin fichas ni datos de pacientes</span><a href="./index.html">Metodología del proyecto</a></footer>
+</body>
+</html>
