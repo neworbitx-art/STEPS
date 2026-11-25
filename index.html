@@ -6,28 +6,24 @@
   <meta name="description" content="Propuesta de planificación territorial para implementar la encuesta STEPS en Guatemala con el INE y el MSPAS.">
   <title>Territorio STEPS · Proyecto</title>
   <link rel="stylesheet" href="./assets/site.css">
+  <link rel="preload" as="image" href="./assets/hero-field.jpg">
+  <script src="./assets/landing.js" defer></script>
 </head>
-<body>
+<body class="landing">
   <header class="site-header"><nav class="nav wrap" aria-label="Navegación principal">
     <a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true"></span>Territorio <strong>STEPS</strong></a>
-    <div class="nav-links"><a href="./index.html" aria-current="page">Proyecto</a><a href="./demo.html">Demo</a></div>
+    <div class="nav-links"><a href="./index.html" aria-current="page">Proyecto</a><a href="#flujo">Metodología</a><a class="nav-cta" href="./demo.html">Abrir demo</a></div>
   </nav></header>
   <main>
-    <section class="hero wrap">
-      <div class="hero-copy">
-        <p class="eyebrow">Datatón INE 2026 / Tecnología y ciencia de datos</p>
-        <h1>Del hogar al<br><em>puesto de salud.</em></h1>
-        <p>Una propuesta para que el INE seleccione, entreviste y cite a participantes STEPS en sus hogares y el MSPAS realice el tamizaje dirigido en sus establecimientos.</p>
-        <a class="button" href="./demo.html">Abrir demo</a>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-scene" aria-hidden="true"></div>
+      <div class="hero-copy wrap">
+        <p class="eyebrow">Territorio STEPS · Datatón INE 2026</p>
+        <h1 id="hero-title">Medir el riesgo.<br><em>Acercar la prevención.</em></h1>
+        <p>Una propuesta para que el INE y el MSPAS midan los factores de riesgo de enfermedades crónicas y coordinen el tamizaje desde el hogar hasta el puesto de salud.</p>
+        <div class="hero-actions"><a class="button" href="./demo.html">Explorar la demo</a><a class="secondary" href="#flujo">Ver metodología</a></div>
       </div>
-      <div class="hero-visual" aria-hidden="true">
-        <div class="orbit orbit-1"></div><div class="orbit orbit-2"></div><div class="orbit orbit-3"></div>
-        <div class="hero-route">
-          <div><span>01</span><b>Hogar</b><small>INE</small></div>
-          <div><span>02</span><b>Sede de salud</b><small>MSPAS</small></div>
-          <div><span>03</span><b>Bioquímica</b><small>Según capacidad</small></div>
-        </div>
-      </div>
+      <button class="motion-toggle" type="button" aria-pressed="false">Pausar movimiento</button>
     </section>
 
     <section class="section wrap" aria-labelledby="flujo">

@@ -6,6 +6,7 @@
   <title>Territorio STEPS · Simulador</title>
   <link rel="stylesheet" href="./assets/site.css">
   <script src="./assets/territory.js" defer></script>
+  <script src="./assets/regional-map.js" defer></script>
   <script src="./assets/planner.js" defer></script>
   <script src="./assets/demo.js" defer></script>
 </head>
@@ -56,8 +57,17 @@
       <div class="workspace">
         <section class="panel territory" aria-labelledby="territory-title">
           <div class="panel-heading"><div><p class="eyebrow">Cobertura territorial</p><h2 id="territory-title">Ocho regiones</h2></div><button id="national" class="secondary" type="button" aria-pressed="true">Ver total nacional</button></div>
-          <div id="region-grid" class="region-grid" aria-label="Seleccionar región"></div>
-          <p class="note">Esquema territorial. Población total de todas las edades del Censo 2018 como referencia operativa. <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">Fuente INE, cuadro A4.1</a></p>
+          <div class="map-layout">
+            <div class="map-surface">
+              <svg id="region-map" viewBox="0 0 510 407" role="group" aria-label="Mapa interactivo de las ocho regiones de Guatemala">
+                <defs><linearGradient id="region-fill" x2="0.2" y2="1"><stop stop-color="#a8c4c3"></stop><stop offset="1" stop-color="#547f83"></stop></linearGradient></defs>
+                <g id="map-depth" aria-hidden="true" transform="translate(0 8)"></g>
+                <g id="map-regions"></g>
+              </svg>
+            </div>
+            <div id="region-grid" class="region-grid" aria-label="Lista de regiones"></div>
+          </div>
+          <p class="note">Contornos simplificados para la demo. Población total de todas las edades del Censo 2018 como referencia operativa. <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">Fuente INE, cuadro A4.1</a></p>
         </section>
         <section class="panel results" aria-labelledby="result-title">
           <p class="eyebrow">Escenario calculado</p>

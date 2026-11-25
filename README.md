@@ -8,9 +8,9 @@ Abre `index.html` en un navegador moderno. También se puede servir este directo
 
 ## Arquitectura y datos
 
-- `index.html` explica la propuesta, el flujo y la adaptación del paso 2.
+- `index.html` explica la propuesta, el flujo y la adaptación del paso 2. Los dos fondos de la portada son imágenes ilustrativas generadas con IA. Las animaciones se pueden pausar y respetan la preferencia de movimiento reducido.
 - `demo.html` contiene el simulador. `assets/planner.js` calcula la muestra, el embudo y la asignación con redondeo por restos mayores. `assets/demo.js` conecta controles, resultados y exportación.
-- `assets/territory.js` contiene los 22 totales departamentales del [Censo 2018 del INE, cuadro A4.1](https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf), consultado y transcrito el 25 de noviembre de 2026. Las ocho regiones se agrupan según el artículo 3 del Decreto 70-86. La visualización es esquemática.
+- `assets/territory.js` contiene los 22 totales departamentales del [Censo 2018 del INE, cuadro A4.1](https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf), consultado y transcrito el 25 de noviembre de 2026. Las ocho regiones se agrupan según el artículo 3 del Decreto 70-86. El mapa seleccionable en `assets/regional-map.js` usa contornos trazados para la demo, siguiendo la disposición regional de referencia de la [CNEE](https://www.cnee.gob.gt/xhtml/prensa/Presentaciones/Plan_Actualizacion_Normativa_CNEE2.pdf). El volumen es sombreado ilustrativo. Para cartografía de producción se requiere una capa georreferenciada con límites validados.
 - HTML, CSS y JavaScript estándar. Sin dependencias de terceros. ChatGPT se usó para asistir en la redacción, implementación y verificación.
 - [Marco STEPS de la OPS](https://www.paho.org/es/documentos/metodo-opsoms-para-vigilancia-factores-riesgo-enfermedades-no-transmisibles-steps) y [manual de la OMS](https://www.who.int/teams/noncommunicable-diseases/surveillance/systems-tools/steps/manuals).
 

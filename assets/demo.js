@@ -11,21 +11,56 @@ const modes = {
 let selection = null;
 let current = null;
 
+const svgNamespace = 'http://www.w3.org/2000/svg';
+const mapLayer = document.querySelector('#map-regions');
+const depthLayer = document.querySelector('#map-depth');
+const regionControls = [];
+
+function selectRegion(id) {
+  selection = id;
+  showResults();
+}
+
 for (const region of regions) {
   const button = document.createElement('button');
   button.type = 'button';
   button.dataset.region = region.id;
-  button.style.gridArea = region.id;
   const label = document.createElement('span');
   label.textContent = region.code;
   const name = document.createElement('strong');
   name.textContent = region.name;
   button.append(label, name);
-  button.addEventListener('click', () => {
-    selection = region.id;
-    showResults();
-  });
+  button.addEventListener('click', () => selectRegion(region.id));
   grid.append(button);
+
+  const geometry = mapShapes[region.id];
+  const depth = document.createElementNS(svgNamespace, 'path');
+  depth.setAttribute('d', geometry.path);
+  depthLayer.append(depth);
+
+  const area = document.createElementNS(svgNamespace, 'g');
+  area.classList.add('map-region');
+  area.dataset.region = region.id;
+  area.setAttribute('role', 'button');
+  area.setAttribute('tabindex', '0');
+  area.setAttribute('aria-label', region.name);
+  area.addEventListener('click', () => selectRegion(region.id));
+  area.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      selectRegion(region.id);
+    }
+  });
+  const path = document.createElementNS(svgNamespace, 'path');
+  path.setAttribute('d', geometry.path);
+  const marker = document.createElementNS(svgNamespace, 'text');
+  marker.setAttribute('x', geometry.label[0]);
+  marker.setAttribute('y', geometry.label[1]);
+  marker.setAttribute('aria-hidden', 'true');
+  marker.textContent = region.code;
+  area.append(path, marker);
+  mapLayer.append(area);
+  regionControls.push(button, area);
 }
 
 nationalButton.addEventListener('click', () => {
@@ -68,8 +103,8 @@ function showResults() {
   const region = regions.find(item => item.id === selection);
   const row = region ? current?.rows.find(item => item.id === selection) : current?.totals;
   nationalButton.setAttribute('aria-pressed', String(!region));
-  for (const button of grid.querySelectorAll('button')) {
-    button.setAttribute('aria-pressed', String(button.dataset.region === selection));
+  for (const control of regionControls) {
+    control.setAttribute('aria-pressed', String(control.dataset.region === selection));
   }
   document.querySelector('#result-title').textContent = region?.name ?? 'Total nacional';
   const domainLabel = current?.config.domain === 'regional'
