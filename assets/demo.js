@@ -13,7 +13,7 @@ let current = null;
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const mapLayer = document.querySelector('#map-regions');
-const camera = document.querySelector('#map-camera');
+const detailMap = createRegionalDetail();
 const labelLayer = document.querySelector('#map-labels');
 document.querySelector('#map-country').setAttribute('d', mapCountryOutline);
 document.querySelector('#map-departments').setAttribute('d', mapDepartmentBorders);
@@ -21,12 +21,8 @@ const regionControls = [];
 
 function selectRegion(id) {
   selection = id;
-  const geometry = mapShapes[id];
-  const [x, y] = geometry?.label ?? [280, 240];
-  camera.style.setProperty('--focus-x', ((280 - x) * .1) + 'px');
-  camera.style.setProperty('--focus-y', ((240 - y) * .08) + 'px');
-  camera.dataset.focused = String(Boolean(geometry));
   showResults();
+  detailMap.show(id);
 }
 
 for (const region of regions) {
@@ -48,11 +44,15 @@ for (const region of regions) {
   area.setAttribute('role', 'button');
   area.setAttribute('tabindex', '0');
   area.setAttribute('aria-label', region.name);
-  area.addEventListener('click', () => selectRegion(region.id));
+  function openRegion() {
+    button.focus();
+    selectRegion(region.id);
+  }
+  area.addEventListener('click', openRegion);
   area.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      selectRegion(region.id);
+      openRegion();
     }
   });
   const fill = document.createElementNS(svgNamespace, 'path');
@@ -87,6 +87,8 @@ function readConfig() {
   const values = form.elements;
   return {
     domain: values.domain.value, mode: values.mode.value, deff: values.deff.valueAsNumber,
+    indicator: values.indicator.selectedOptions[0].textContent,
+    prevalenceBasis: values.indicator.value === 'conservador' ? 'Supuesto conservador' : 'Supuesto ingresado',
     prevalence: values.prevalence.valueAsNumber / 100, margin: values.margin.valueAsNumber / 100,
     interview: values.interview.valueAsNumber / 100, attendance: values.attendance.valueAsNumber / 100,
     invite: values.invite.disabled ? 0 : values.invite.valueAsNumber / 100,
@@ -96,7 +98,20 @@ function readConfig() {
 }
 
 function refresh() {
-  const mode = form.elements.mode.value;
+  const { indicator, prevalence, mode: modeField } = form.elements;
+  const conservative = indicator.value === 'conservador';
+  prevalence.readOnly = conservative;
+  if (conservative) prevalence.value = 50;
+  document.querySelector('#design-note').textContent = conservative
+    ? '50 % maximiza la muestra para un mismo error y efecto de diseño. Confianza del 95 %.'
+    : 'Ingresa una prevalencia de referencia para este indicador. El cálculo usa un 95 % de confianza y la completitud hasta el paso 2.';
+  const reference = document.querySelector('#indicator-reference');
+  const match = document.querySelector(`[data-indicator="${indicator.value}"]`);
+  reference.hidden = !match;
+  reference.textContent = match
+    ? match.cells[1].textContent + ' STEPS metropolitano 2015: ' + match.cells[3].textContent + '.'
+    : '';
+  const mode = modeField.value;
   const disabled = mode === 'off';
   const bioFields = document.querySelector('#bio-fields');
   bioFields.hidden = disabled;
@@ -155,14 +170,14 @@ exportButton.addEventListener('click', () => {
     'MUESTRA_SELECCIONAR', 'PASO_1', 'PASO_2', 'INVITACIONES_PASO_3', 'CUPOS_PASO_3',
     'PASO_3_VALIDO', 'BRECHA_CUPOS', 'MODALIDAD_PASO_3', 'PREVALENCIA_PROP',
     'ERROR_ABSOLUTO_PROP', 'DEFF', 'ENTREVISTA_PROP', 'PASO_2_PROP', 'INVITAR_PASO_3_PROP',
-    'CAPACIDAD_TOTAL_PASO_3', 'VALIDAS_PASO_3_PROP',
+    'CAPACIDAD_TOTAL_PASO_3', 'VALIDAS_PASO_3_PROP', 'INDICADOR_DISENO', 'ORIGEN_SUPUESTO_PREVALENCIA',
   ];
   const data = [...rows, { ...totals, name: 'Total nacional', departmentNames: [] }].map(row => [
     row.name, row.departmentNames.join(' | '), config.domain === 'regional' ? '8 regiones' : 'Nacional',
     'INE Guatemala · Censo 2018 · cuadro A4.1', row.population, row.selected, row.step1, row.step2,
     row.requested, row.booked, row.step3, row.gap, form.elements.mode.selectedOptions[0].textContent,
     config.prevalence, config.margin, config.deff, config.interview, config.attendance,
-    config.invite, config.capacity, config.valid,
+    config.invite, config.capacity, config.valid, config.indicator, config.prevalenceBasis,
   ]);
   const csv = [headings, ...data].map(row => row.map(csvCell).join(',')).join('\r\n');
   const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
@@ -177,3 +192,18 @@ form.addEventListener('submit', event => event.preventDefault());
 form.addEventListener('input', refresh);
 form.addEventListener('reset', () => requestAnimationFrame(refresh));
 refresh();
+detailMap.show(null);
+
+const tableauReference = document.querySelector('#mapa-tableau');
+
+function loadTableauReference() {
+  if (!tableauReference.open) return;
+  const frame = tableauReference.querySelector('iframe');
+  if (!frame.hasAttribute('src')) frame.src = frame.dataset.src;
+}
+
+document.querySelector('#open-tableau-map').addEventListener('click', () => {
+  tableauReference.open = true;
+});
+tableauReference.addEventListener('toggle', loadTableauReference);
+loadTableauReference();

@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Territorio STEPS · Simulador</title>
+  <title>STEPS for Guatemala · Simulador</title>
   <link rel="stylesheet" href="./assets/site.css">
   <script src="./assets/territory.js" defer></script>
   <script src="./assets/regional-map.js" defer></script>
   <script src="./assets/planner.js" defer></script>
+  <script src="./assets/health-sites.js" defer></script>
+  <script src="./assets/regional-detail.js" defer></script>
   <script src="./assets/demo.js" defer></script>
 </head>
 <body>
   <header class="site-header"><nav class="nav wrap" aria-label="Navegación principal">
-    <a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true"></span>Territorio <strong>STEPS</strong></a>
+    <a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true"></span><strong>STEPS</strong> for Guatemala</a>
     <div class="nav-links"><a href="./index.html">Proyecto</a><a href="./demo.html" aria-current="page">Demo</a></div>
   </nav></header>
   <main class="wrap demo">
@@ -26,13 +28,30 @@
         <h2 id="config-title">Supuestos del escenario</h2>
         <form id="settings">
           <label>Dominio de estudio<select name="domain"><option value="national">Nacional</option><option value="regional">Ocho dominios regionales</option></select></label>
-          <fieldset><legend>Diseño muestral · paso 2</legend>
+          <fieldset><legend>Diseño muestral hasta el paso 2</legend>
+            <label>Indicador de diseño
+              <select name="indicator" aria-describedby="design-note indicator-reference">
+                <option value="conservador">Sin prevalencia previa · criterio conservador</option>
+                <optgroup label="Paso 1 · Entrevista">
+                  <option value="tabaco">Consumo actual de tabaco</option>
+                  <option value="alcohol">Consumo episódico intenso de alcohol</option>
+                  <option value="inactividad">Actividad física insuficiente</option>
+                  <option value="alimentacion">Consumo insuficiente de frutas y verduras</option>
+                </optgroup>
+                <optgroup label="Paso 2 · Mediciones físicas">
+                  <option value="presion">Presión arterial elevada</option>
+                  <option value="obesidad">Obesidad</option>
+                </optgroup>
+              </select>
+            </label>
             <div class="form-grid">
               <label>Prevalencia esperada (%)<input name="prevalence" type="number" value="50" min="1" max="99" required></label>
               <label>Error absoluto (p. p.)<input name="margin" type="number" value="5" min="1" max="25" step="0.1" required></label>
               <label>Efecto de diseño (DEFF)<input name="deff" type="number" value="1.5" min="1" max="10" step="0.1" required></label>
             </div>
-            <p class="note">Presión arterial elevada · confianza del 95%.</p>
+            <p id="design-note" class="note"></p>
+            <p id="indicator-reference" class="note" aria-live="polite" hidden></p>
+            <p class="note"><a href="#cotejo-indicadores">Ver el cotejo OPS/OMS e INE</a></p>
           </fieldset>
           <fieldset><legend>Participación esperada</legend>
             <div class="form-grid">
@@ -72,12 +91,41 @@
                   <g id="map-regions"></g>
                   <path id="map-departments" aria-hidden="true"/>
                   <g id="map-labels" aria-hidden="true"></g>
+                  <g id="map-municipalities"></g>
+                  <g id="map-facilities"></g>
                 </g>
               </svg>
             </div>
             <div id="region-grid" class="region-grid" aria-label="Lista de regiones"></div>
           </div>
-          <p class="note">Límites <a href="https://www.geoboundaries.org/api/current/gbOpen/GTM/ADM1/">geoBoundaries</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (<a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>). Población total de todas las edades · <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">INE, Censo 2018</a>.</p>
+          <div id="region-detail" class="region-detail" hidden>
+            <nav id="territory-navigation" class="territory-navigation" aria-label="Navegación territorial">
+              <label>Departamento<select id="map-department"></select></label>
+              <label>Municipio<select id="map-municipality"></select></label>
+            </nav>
+            <p id="map-coverage" class="note" role="status"></p>
+            <div id="facility-legend" class="map-legend" aria-label="Simbología del mapa" hidden>
+              <label><input id="show-posts" type="checkbox" checked><span class="key-post" aria-hidden="true"></span> Puestos de salud</label>
+              <label><input id="show-centres" type="checkbox" checked><span class="key-centre" aria-hidden="true"></span> Centros de salud</label>
+            </div>
+            <p class="note">Un número agrupa varios establecimientos cercanos. Selecciona el marcador para consultar los nombres.</p>
+            <p id="district-status" class="note" role="status"></p>
+            <p id="facility-status" class="note" role="status"></p>
+            <div id="facility-detail" class="facility-detail note" aria-live="polite" hidden></div>
+            <div id="municipal-sites" class="municipal-sites" hidden></div>
+            <section id="cajola-profile" class="municipal-profile" aria-label="Ficha territorial de Cajolá" hidden>
+              <h3>Cajolá · Ficha territorial</h3>
+              <p class="note">El esquema compartido registra 11 sitios. Conservamos el tipo indicado en ese esquema. Las fichas sin coordenadas verificadas quedan en la lista y el CAP se registra por separado.</p>
+              <dl><dt>Puestos de salud</dt><dd>Xecol, Xetalbijoj y Cajolá Chiquito.</dd>
+              <dt>Centros comunitarios</dt><dd>La Ciénaga, Los Díaz y Los Molina, La Vista / Los Vásquez, Las Delicias, Buena Vista, Los Mencho, La Cruz y La Cumbre.</dd>
+              <dt>Centro de Atención Permanente (CAP)</dt><dd>Cabecera municipal. <a href="https://portal.segeplan.gob.gt/segeplan/wp-content/uploads/2025/05/0907_PDM_OT_CAJOLA.pdf">Plan de Desarrollo Municipal, SEGEPLAN</a></dd></dl>
+            </section>
+            <p id="olintepeque-note" class="note" hidden>El puesto de la colonia El Trigal se registra por separado, pendiente de coordenadas verificadas. <a href="https://agn.gt/puesto-de-salud-en-olintepeque-quetzaltenango-ya-inicio-labores">Fuente: AGN</a>.</p>
+            <button id="reload-layers" class="secondary" type="button" hidden>Reintentar carga de capas</button>
+            <p class="note">Municipios <a href="https://www.geoboundaries.org/api/current/gbOpen/GTM/ADM2/">geoBoundaries · CONRED/OCHA</a> y <a href="https://sig.conred.gob.gt/server/rest/services/Hosted/Limites_municipales/FeatureServer/0">capa municipal CONRED</a> · Sitios de referencia del <a href="https://rmgir.proyectomesoamerica.org/server/rest/services/RMGIR/Guatemala_Sistema_Expuesto_WGS1984/MapServer/2">RMGIR</a>, <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> y registros locales. La sede, el horario y la capacidad del operativo requieren confirmación del <a href="https://establecimientosdesalud.mspas.gob.gt/">MSPAS</a>.</p>
+          </div>
+          <p class="note">Límites departamentales <a href="https://www.geoboundaries.org/api/current/gbOpen/GTM/ADM1/">geoBoundaries</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (<a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>). Población total de todas las edades · <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">INE, Censo 2018</a>.</p>
+          <p class="note"><a id="open-tableau-map" href="#mapa-tableau">Ver el mapa de establecimientos en Tableau Public ↗</a></p>
         </section>
         <section class="panel results" aria-labelledby="result-title">
           <p class="eyebrow">Escenario calculado</p>
@@ -97,6 +145,40 @@
         </section>
       </div>
     </div>
+    <details class="panel tableau-reference" id="mapa-tableau">
+      <summary>Explorar el mapa en Tableau Public</summary>
+      <div class="tableau-content">
+        <p class="note">Mapa de los Establecimientos del Sistema de Salud de Guatemala, publicado por Wilder. Usa los controles del tablero para explorar los servicios. <a href="https://public.tableau.com/app/profile/wobautista/viz/MapadelosEstablecimientosdelSistemadeSaluddeGuatemala/Dashboard1" target="_blank" rel="noopener noreferrer">Abrir directamente en Tableau Public ↗</a></p>
+        <div class="tableau-viewport">
+          <iframe title="Mapa de establecimientos de salud de Guatemala en Tableau Public" loading="lazy"
+            data-src="https://public.tableau.com/views/MapadelosEstablecimientosdelSistemadeSaluddeGuatemala/Dashboard1?:embed=yes&amp;:showVizHome=no&amp;:tabs=no"
+            referrerpolicy="no-referrer" allowfullscreen></iframe>
+        </div>
+      </div>
+    </details>
+    <section class="panel indicator-crosswalk" id="cotejo-indicadores" aria-labelledby="crosswalk-title">
+      <h2 id="crosswalk-title">Indicadores STEPS y fuentes de Guatemala</h2>
+      <p>Las definiciones siguen el instrumento OPS/OMS. Los porcentajes corresponden a STEPS 2015 del área metropolitana, en adultos de 18 años y más. Se presentan como antecedentes históricos y el simulador conserva el supuesto que ingreses.</p>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de cotejo de los seis indicadores">
+        <table>
+          <thead><tr><th scope="col">Indicador</th><th scope="col">Definición STEPS</th><th scope="col">Cotejo con fuentes del INE</th><th scope="col">STEPS metropolitano 2015</th></tr></thead>
+          <tbody>
+            <tr data-indicator="tabaco"><th scope="row">Consumo actual de tabaco · Paso 1</th><td>Uso actual de tabaco fumado o sin humo.</td><td>Referencia parcial. ENSMI 2014–2015 registra uso actual de tabaco con rangos de edad distintos al de STEPS. <a href="#ensmi-2014">ENSMI 2014–2015</a></td><td>14,9 %</td></tr>
+            <tr data-indicator="alcohol"><th scope="row">Consumo episódico intenso de alcohol · Paso 1</th><td>Seis o más tragos estándar en una ocasión en los últimos 30 días.</td><td>Referencia parcial. ENSMI 2008–2009 informa consumo en los últimos 30 días y frecuencia, con otra pregunta para el episodio intenso. <a href="#ensmi-2008">ENSMI 2008–2009, cuadros 10.1–10.3</a></td><td>13,2 %</td></tr>
+            <tr data-indicator="inactividad"><th scope="row">Actividad física insuficiente · Paso 1</th><td>Menos de 150 minutos semanales de actividad moderada o su equivalente.</td><td>Referencia parcial. ENSMI 2008–2009 incluye actividad física en el cuestionario del hombre. En lo revisado no se confirmó un indicador equivalente al de STEPS. <a href="#ensmi-2008">ENSMI 2008–2009</a></td><td>30,9 %</td></tr>
+            <tr data-indicator="alimentacion"><th scope="row">Consumo insuficiente de frutas y verduras · Paso 1</th><td>Menos de cinco porciones al día entre frutas y verduras.</td><td>Contexto del hogar. ENCOVI 2023 registra alimentos adquiridos y autoconsumo del hogar. STEPS mide porciones por persona. <a href="#encovi-2023">ENCOVI 2023, capítulo 13</a></td><td>92,0 %</td></tr>
+            <tr data-indicator="presion"><th scope="row">Presión arterial elevada · Paso 2</th><td>Sistólica ≥ 140 mmHg, diastólica ≥ 90 mmHg o uso actual de medicamentos para presión elevada.</td><td>Referencia parcial. ENSMI 2008–2009 publica antecedentes y resultados autorreportados entre quienes se habían examinado. STEPS mide presión arterial en la encuesta. <a href="#ensmi-2008">ENSMI 2008–2009, capítulo 10</a></td><td>26,7 %</td></tr>
+            <tr data-indicator="obesidad"><th scope="row">Obesidad · Paso 2</th><td>Índice de masa corporal ≥ 30 kg/m², calculado con peso y talla.</td><td>Referencia parcial. ENSMI 2014–2015 publica IMC en mujeres de 15 a 49 años. La población cubierta difiere de la de STEPS. <a href="#ensmi-2014">ENSMI 2014–2015, cuadro 11.15a</a></td><td>28,8 %</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">El Censo 2018 aporta la distribución territorial. Las estadísticas hospitalarias del INE describen atenciones registradas y tienen un universo distinto al de una encuesta de hogares. Glucosa y lípidos pertenecen al paso 3.</p>
+      <ul class="crosswalk-sources note">
+        <li><a href="https://www.paho.org/es/documentos/metodo-opsoms-para-vigilancia-factores-riesgo-enfermedades-no-transmisibles-steps">Método STEPS de la OPS</a> · <a href="https://www.who.int/teams/noncommunicable-diseases/surveillance/systems-tools/steps/instrument">Instrumento estándar de la OMS</a></li>
+        <li><a href="https://epidemiologia.mspas.gob.gt/index.php/informacion/vigilancia-epidemiologica/salas-situacionales?download=242%3Asteps-2015">MSPAS · Hoja informativa STEPS 2015 del área metropolitana</a></li>
+        <li><a id="ensmi-2008" href="https://www.ine.gob.gt/sistema/uploads/2014/01/22/LYk4A1kGJAO7lvfS0Aq6tezcUa9tQh35.pdf">ENSMI 2008–2009</a> · <a id="ensmi-2014" href="https://www.dhsprogram.com/pubs/pdf/fr318/fr318.pdf">ENSMI 2014–2015</a> · <a id="encovi-2023" href="https://www.ine.gob.gt/wp-content/uploads/2024/11/Guia-para-el-uso-de-bases-de-datos_v_final.pdf">ENCOVI 2023</a> · <a href="https://www.ine.gob.gt/estadisticas-hospitalarias/">Estadísticas hospitalarias</a></li>
+      </ul>
+    </section>
   </main>
   <footer class="footer wrap"><span>Escenario ilustrativo · Sin fichas ni datos de pacientes</span><a href="./index.html">Metodología del proyecto</a></footer>
 </body>
