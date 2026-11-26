@@ -77,17 +77,3 @@ La ficha municipal de Cajolá transcribe los 11 sitios del esquema compartido. E
 
 El mapa nacional y los filtros territoriales muestran la selección local desde el inicio. La ampliación usa la capa pública de establecimientos del RMGIR (categorías puesto y centro, consulta paginada), con OpenStreetMap/Healthsites como respaldo regional. Las coordenadas de referencia de Olintepeque quedan en la lista local.
 
-## Lineamientos de entrega y evaluación
-
-La Nota Conceptual del Datatón INE 2026, en la categoría Tecnológica y ciencias de datos, pide desarrollar el proyecto durante el evento, trabajar con al menos una fuente pública del INE, citar los datos complementarios y dar al jurado acceso al historial Git. El prototipo debe demostrarse en funcionamiento y contar con instrucciones reproducibles, un README, una presentación en PDF y un video de respaldo de 2 a 3 minutos.
-
-La nota conceptual fija la entrega para el **26 de noviembre de 2026 a las 09:00**, por el medio que indique el INE. La presentación oficial del evento indica que el canal se anunciará por correo electrónico y solicita una nota de consentimiento firmada por los integrantes. La exposición final prevé 7 minutos de presentación y 3 minutos de preguntas.
-
-| Criterio del INE | Ponderación |
-| --- | ---: |
-| Funcionalidad | 25 % |
-| Aplicabilidad institucional | 20 % |
-| Calidad técnica | 20 % |
-| Innovación | 15 % |
-| Rigor en el uso de los datos | 10 % |
-| Presentación y usabilidad | 10 % |
