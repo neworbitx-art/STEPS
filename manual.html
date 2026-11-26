@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es-GT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>STEPS for Guatemala · Manual de usuario</title>
+  <link rel="stylesheet" href="./assets/site.css">
+</head>
+<body>
+  <header class="site-header"><nav class="nav wrap" aria-label="Navegación principal">
+    <a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true"></span><strong>STEPS</strong> for Guatemala</a>
+    <div class="nav-links"><a href="./index.html">Proyecto</a><a class="nav-team" href="./equipo.html">Quiénes somos</a><a href="./demo.html">Demo</a><a href="./manual.html" aria-current="page">Manual</a></div>
+  </nav></header>
+  <main class="wrap demo manual">
+    <header class="demo-header">
+      <div><p class="eyebrow">STEPS for Guatemala</p><h1>Manual de usuario</h1><p>Configura el operativo y distingue la población de referencia de la muestra que se debe seleccionar.</p></div>
+      <a class="button" href="./demo.html">Abrir simulador</a>
+    </header>
+    <nav class="manual-nav" aria-label="Contenido del manual">
+      <a href="#poblacion">Población y año</a>
+      <a href="#diseno">Paso 1</a>
+      <a href="#mediciones">Paso 2</a>
+      <a href="#bioquimica">Paso 3</a>
+      <a href="#mapa">Mapa y CSV</a>
+      <a href="#ejemplo">Ejemplo 2029</a>
+    </nav>
+    <section class="panel" id="poblacion">
+      <h2>Población y año del operativo</h2>
+      <dl>
+        <dt>Año del operativo</dt>
+        <dd>Elige entre 2026 y 2035. La demo muestra el total nacional proyectado y suma las edades simples de 18 a 69 años, inclusive, para mostrar la población objetivo del escenario. La demo incluye una copia de las cifras del cuadro 9 del INE. «Actualizar datos del INE» intenta consultar el PDF oficial, vuelve a sumar las edades simples y aplica las cifras a la sesión. Si el sitio bloquea la descarga desde el navegador, abre «Fuentes oficiales y carga manual», descarga el PDF y selecciónalo allí. El escenario usa la copia disponible si la lectura falla. <a href="https://www.ine.gob.gt/ine/wp-content/uploads/2020/08/01-Metodologia-Nacional.pdf">INE · Metodología y proyecciones nacionales, cuadro 9</a>.</dd>
+        <dt>Dominio de estudio</dt>
+        <dd>El dominio es la unidad para la que se fija la precisión. En <strong>Nacional</strong> se calcula una muestra para todo el país y se reparte entre las ocho regiones según su proporción de población en el Censo 2018. En <strong>Ocho dominios regionales</strong> se aplica la meta de precisión y los mismos supuestos a cada región por separado. Seleccionar una región en el mapa cambia el territorio que se muestra. El menú de dominio controla el diseño.</dd>
+        <dt>Población censada por país o región · 2018</dt>
+        <dd>Es el conteo histórico de todas las edades del Censo 2018 para el país o la región que muestra el escenario. Las proyecciones incorporadas son nacionales. Los filtros departamental y municipal sirven para explorar el mapa. <a href="https://www.ine.gob.gt/sistema/uploads/2021/11/19/202111192139096rGNQ5SfAlepmPGfYTovW9MF6X2turyT.pdf">INE · Censo 2018, cuadro A4.1</a>.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="diseno">
+      <h2>Paso 1 · Selección y entrevista</h2>
+      <p>El INE selecciona a los participantes de los hogares, entrevista y cita en un establecimiento de salud. La demo calcula cuántos adultos seleccionar al inicio para llegar a la meta de mediciones completas del paso 2.</p>
+      <dl>
+        <dt>Indicador de diseño</dt>
+        <dd>Es la proporción cuya precisión guía el cálculo de la muestra, por ejemplo, el consumo actual de tabaco o la presión arterial elevada. La encuesta puede estudiar varios indicadores a la vez. Si necesitas una precisión específica para varios, puedes comparar escenarios y planificar con la muestra mayor. El <a href="./demo.html#cotejo-indicadores">cotejo OPS/OMS e INE</a> documenta el alcance y las diferencias entre las fuentes.</dd>
+        <dt>Prevalencia esperada (%)</dt>
+        <dd>Es el porcentaje que se espera que cumpla la definición del indicador. Se puede ingresar una estimación previa comparable por edad, territorio y definición. El modo conservador fija 50 % porque maximiza <var>p</var> × (1 − <var>p</var>) para una misma precisión y DEFF. Los datos históricos del cotejo permiten contextualizar la decisión.</dd>
+        <dt>Error absoluto (p. p.)</dt>
+        <dd>Es el margen de error en puntos porcentuales que se usa para dimensionar la muestra con 95 % de confianza. Un margen de 5 puntos alrededor de una estimación de 20 % abarca de 15 % a 25 %. Cuanto menor sea el margen, mayor será la muestra calculada.</dd>
+        <dt>Efecto de diseño (DEFF)</dt>
+        <dd>Es la varianza del estimador con el diseño real dividida entre la varianza que tendría con una muestra aleatoria simple del mismo tamaño. Para estimarlo con un piloto o una encuesta comparable, se calcula la primera varianza respetando conglomerados, estratos y ponderaciones según el diseño, y se divide entre la varianza de referencia. Si las varianzas fueran 0,0006 y 0,0004, el DEFF sería 1,5. La demo usa 1,5 como supuesto inicial, conforme a la referencia de la OMS cuando falta una estimación del diseño. El valor definitivo corresponde al protocolo de muestreo. <a href="https://cdn.who.int/media/docs/default-source/ncds/ncd-surveillance/steps/part2.pdf">OMS · Manual STEPS, parte 2</a>.</dd>
+        <dt>Entrevista de seleccionados (%)</dt>
+        <dd>Es la proporción de la muestra inicial que se espera entrevistar por completo. La demo cuenta una cita para el paso 2 por cada entrevista completa.</dd>
+        <dt>Adultos a seleccionar</dt>
+        <dd>Es el número de adultos que se estima necesario seleccionar al inicio del operativo. Con <var>p</var> (prevalencia) y <var>d</var> (error) expresados como proporciones, la meta teórica de completos es 1,96² × <var>p</var>(1 − <var>p</var>) × DEFF / <var>d</var>². La demo divide esa meta entre la proporción esperada de entrevistas y la proporción de citados que completarán el paso 2. Redondea hacia arriba el resultado para obtener la muestra inicial.</dd>
+        <dt>Entrevistas y citas previstas</dt>
+        <dd>Es el número de entrevistas completas esperadas y, bajo el supuesto de una cita por entrevista, el número de citas previstas para el paso 2.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="mediciones">
+      <h2>Paso 2 · Mediciones físicas</h2>
+      <p>El MSPAS atiende en las sedes a las personas citadas y registra las mediciones físicas del protocolo. El cálculo usa la proporción de citados que completarán el tamizaje.</p>
+      <dl>
+        <dt>Paso 2 completo de citados (%)</dt>
+        <dd>Es la proporción de quienes recibieron una cita que se espera completen las mediciones. Este supuesto incluye tanto la asistencia como la finalización del tamizaje.</dd>
+        <dt>Meta de tamizajes por cada 100 000 adultos</dt>
+        <dd>Este campo está junto al año. Introduce una tasa de cobertura operativa para que la proyección de ese año entre al cálculo. La demo multiplica esa tasa por la población proyectada de 18 a 69 años, divide entre 100 000 y redondea hacia arriba. Para dimensionar el operativo usa la mayor de las dos metas, cobertura o precisión. En dominios regionales reparte la proyección nacional con las proporciones del Censo 2018 como aproximación. Esas cifras regionales son estimaciones del simulador. Con 0 se aplica únicamente la meta de precisión.</dd>
+        <dt>Tamizajes completos previstos</dt>
+        <dd>Es la cantidad estimada al aplicar esa proporción a quienes completaron la entrevista y recibieron una cita.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="bioquimica">
+      <h2>Paso 3 · Bioquímica</h2>
+      <p>El MSPAS planifica invitaciones y cupos según su capacidad. La demo estima volumen operativo. La elegibilidad y la selección de participantes para bioquímica corresponden al protocolo.</p>
+      <dl>
+        <dt>Modalidad</dt>
+        <dd>Elige química seca capilar, laboratorio de referencia o paso 3 deshabilitado. La capacidad y el porcentaje de mediciones válidas se ingresan según la modalidad y las sedes previstas.</dd>
+        <dt>Participantes del paso 2 a invitar (%)</dt>
+        <dd>Es el porcentaje de quienes completaron el paso 2 que el escenario prevé invitar a bioquímica. Se aplica al total de tamizajes completos.</dd>
+        <dt>Cupos totales del operativo</dt>
+        <dd>Son las plazas para bioquímica que el operativo puede ofrecer en total. El simulador asigna los cupos disponibles de forma proporcional a la demanda de las regiones.</dd>
+        <dt>Mediciones válidas con cupo (%)</dt>
+        <dd>Es la proporción de personas con cupo asignado que se espera que produzcan una medición válida. El resultado se muestra en <strong>Mediciones válidas previstas</strong>.</dd>
+        <dt>Invitaciones previstas y cupos asignados</dt>
+        <dd>Las invitaciones representan la demanda estimada. Los cupos asignados indican cuántas de esas invitaciones se pueden atender con la capacidad ingresada.</dd>
+        <dt id="brecha">Brecha de cupos</dt>
+        <dd>Es la cantidad de invitaciones previstas que quedan sin cupo. Se calcula como invitaciones menos cupos asignados, con un mínimo de cero. Si prevés 346 invitaciones y asignas 300 cupos, la brecha es de 46. El porcentaje de mediciones válidas se aplica después, sobre los 300 cupos.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="mapa">
+      <h2>Mapa, barras y exportación</h2>
+      <dl>
+        <dt>Cobertura territorial</dt>
+        <dd>Selecciona una región en el mapa o en la lista. Puedes explorar sus departamentos y municipios y mostrar puestos o centros de salud. Usa el botón con flecha sobre el mapa para subir un nivel territorial. En las vistas nacional y regional, cada número cuenta establecimientos cercanos. En la vista departamental, cada número cuenta los establecimientos visibles de un municipio. Los registros sin municipio identificado se muestran aparte. La suma corresponde al catálogo visible con los filtros activos. En la vista municipal, los puntos identifican sitios de la lista y los círculos azules muestran conteos de grupos cercanos. Pulsa el marcador para ver los nombres. La capa muestra los registros disponibles. La habilitación de una sede y sus cupos se confirman con el MSPAS.</dd>
+        <dt>Escenario calculado</dt>
+        <dd>Resume los tres pasos para el país o la región seleccionada, según el dominio de estudio. Abre «Ver detalles del escenario» para consultar la población de referencia y las barras. Cada barra muestra la proporción del resultado de su paso respecto de los adultos seleccionados al inicio.</dd>
+        <dt>Descargar CSV</dt>
+        <dd>Exporta las ocho regiones y el total nacional, con los supuestos y resultados, incluida la tasa de cobertura y la brecha de cupos para el análisis de capacidad. El año del operativo figura en todas las filas. Las dos cifras proyectadas se incluyen en la fila nacional.</dd>
+        <dt>Restablecer supuestos</dt>
+        <dd>Vuelve a los parámetros iniciales del formulario, incluido el año 2026.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="ejemplo">
+      <h2>Ejemplo de planificación para 2029</h2>
+      <p>La proyección del INE para Guatemala es de <strong>18 985 066 habitantes</strong>, de los cuales <strong>11 648 456</strong> tienen entre 18 y 69 años en la serie. El escenario nacional con los supuestos iniciales estima el siguiente operativo. <a href="https://www.ine.gob.gt/ine/wp-content/uploads/2020/08/01-Metodologia-Nacional.pdf">INE · Cuadro 9</a>.</p>
+      <ol>
+        <li><strong>Paso 1.</strong> Seleccionar 821 adultos y prever 739 entrevistas completas y citas.</li>
+        <li><strong>Paso 2.</strong> Prever 576 tamizajes completos.</li>
+        <li><strong>Paso 3.</strong> Prever 346 invitaciones, 300 cupos asignados, 240 mediciones válidas y una brecha de 46 cupos.</li>
+      </ol>
+      <p>Cambiar el año actualiza la población proyectada. Con los mismos supuestos estadísticos y de participación y una meta de cobertura de 0, la muestra inicial se mantiene en 821 adultos. Si ingresas 10 tamizajes por cada 100 000 adultos en dominio nacional, la meta operativa pasa de 1 101 tamizajes en 2026 a 1 295 en 2035. El marco muestral y la selección de hogares para un operativo real requieren planificación del INE.</p>
+    </section>
+  </main>
+  <footer class="footer wrap"><a href="./index.html">Metodología del proyecto</a><a href="./demo.html">Volver al simulador</a></footer>
+</body>
+</html>

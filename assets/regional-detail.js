@@ -208,22 +208,41 @@ function groupFacilities(facilities, distance) {
   return groups;
 }
 
-function createRegionalDetail() {
+function placeCountMarker(point, occupied) {
+  const fits = ([x, y]) => x >= 14 && x <= 546 && y >= 14 && y <= 466 &&
+    occupied.every(({ point: [otherX, otherY], clearance }) =>
+      Math.hypot(x - otherX, y - otherY) >= clearance);
+  if (fits(point)) return point;
+  for (const radius of [14, 22, 30, 38, 46, 54]) {
+    for (let direction = 0; direction < 12; direction++) {
+      const angle = direction * Math.PI / 6;
+      const candidate = [point[0] + radius * Math.cos(angle), point[1] + radius * Math.sin(angle)];
+      if (fits(candidate)) return candidate;
+    }
+  }
+  return point;
+}
+
+function createRegionalDetail(returnToCountry) {
   const camera = document.querySelector('#map-camera');
   const territoryTitle = document.querySelector('#territory-title');
   const details = document.querySelector('#region-detail');
   const municipalityLayer = document.querySelector('#map-municipalities');
   const facilityLayer = document.querySelector('#map-facilities');
+  const facilityLeaders = document.querySelector('#map-facility-leaders');
   const districtStatus = document.querySelector('#district-status');
   const facilityStatus = document.querySelector('#facility-status');
   const facilityDetail = document.querySelector('#facility-detail');
   const reload = document.querySelector('#reload-layers');
+  const mapBack = document.querySelector('#map-back');
+  const nationalButton = document.querySelector('#national');
   const departmentControl = document.querySelector('#map-department');
   const municipalityControl = document.querySelector('#map-municipality');
   const mapLegend = document.querySelector('#facility-legend');
   const municipalSites = document.querySelector('#municipal-sites');
   const cajolaCard = document.querySelector('#cajola-profile');
   const coverage = document.querySelector('#map-coverage');
+  const markerGuide = document.querySelector('#map-marker-guide');
   const navigation = document.querySelector('#territory-navigation');
   const olintepequeNote = document.querySelector('#olintepeque-note');
   const posts = document.querySelector('#show-posts');
@@ -245,14 +264,25 @@ function createRegionalDetail() {
     return element;
   }
 
+  function facilityLink(site, municipality = site.municipality, department = site.department) {
+    const link = document.createElement('a');
+    const name = site.name.replace(/^P\s*\/\s*S\s*/i, 'Puesto de salud ')
+      .replace(/^C\s*\/\s*S\s*/i, 'Centro de salud ');
+    const departmentName = departments.find(([id]) => id === department)?.[1];
+    const query = [...new Set([name, municipality, departmentName, 'Guatemala'].filter(Boolean))].join(' · ');
+    link.href = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+    link.textContent = site.name;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    return link;
+  }
+
   function describeFacilities(records) {
     const list = document.createElement('ul');
-    for (const { name, source, municipality } of records) {
+    for (const site of records) {
       const item = document.createElement('li');
-      const link = document.createElement('a');
-      link.href = source;
-      link.textContent = name;
-      item.append(link);
+      const municipality = activeLayer.municipality?.name || site.municipality;
+      item.append(facilityLink(site, municipality, activeLayer.department || site.department));
       if (municipality) {
         const place = document.createElement('span');
         place.textContent = ' · ' + municipality;
@@ -264,35 +294,80 @@ function createRegionalDetail() {
     facilityDetail.hidden = false;
   }
 
+  function districtForSite(site, districts) {
+    const byName = site.municipality && districts.find(district =>
+      (!site.department || site.department === district.department) &&
+      mapName(site.municipality) === mapName(district.name));
+    return byName || districts.find(district => (!site.department || site.department === district.department) && district.rings &&
+      inBounds(site.point, district.bounds) && inRings(site.point, district.rings));
+  }
+
+  function departmentGroups(visible, assignments) {
+    const groups = new Map();
+    for (const site of visible) {
+      const district = assignments.get(site);
+      const key = district?.key ?? null;
+      if (!groups.has(key)) groups.set(key, {
+        point: site.point, records: [], groupName: district?.name ?? 'Sin municipio identificado',
+      });
+      groups.get(key).records.push(site);
+    }
+    return groups.values();
+  }
+
   function paintFacilities() {
     facilityLayer.replaceChildren();
+    facilityLeaders.replaceChildren();
     if (!activeLayer) return;
-    const { visibleSites, scale, municipality } = activeLayer;
+    const { visibleSites, scale, offset = [0, 0], municipality, region, department, assignments } = activeLayer;
+    markerGuide.textContent = municipality
+      ? 'Los puntos identifican sitios de la lista. Los círculos azules indican cuántos sitios cercanos hay en un grupo.'
+      : department
+        ? 'Cada número corresponde a los establecimientos de un municipio. Los sitios sin municipio identificado se agrupan aparte. La suma coincide con los registros visibles del departamento.'
+        : 'Cada número indica cuántos establecimientos hay en ese marcador. Selecciónalo para ver los nombres.';
+    const spaceCounts = !region || Boolean(department && !municipality);
+    const occupied = region ? [] : Object.values(mapShapes).map(({ label }) => ({ point: label, clearance: 27 }));
     const visible = visibleSites.filter(item => item.kind === 'post' ? posts.checked : centres.checked);
-    for (const { point, records } of groupFacilities(visible, (municipality ? 28 : 37) / scale)) {
+    showFacilityStatus(visible, activeLayer.context);
+    const groups = department && !municipality
+      ? departmentGroups(visible, assignments)
+      : groupFacilities(visible, (municipality ? 28 : 37) / scale);
+    for (const { point, records, groupName } of groups) {
       const [record] = records;
       const grouped = records.length > 1;
-      const kind = grouped ? 'group' : record.kind;
-      const label = grouped ? records.length + ' establecimientos cercanos' :
-        record.name + (record.municipality ? ' · ' + record.municipality : '');
+      const kind = grouped || !municipality ? 'group' : record.kind;
+      const label = groupName ? groupName + ' · ' + records.length +
+        (records.length === 1 ? ' establecimiento' : ' establecimientos')
+        : grouped ? records.length + ' establecimientos cercanos'
+          : record.name + (record.municipality ? ' · ' + record.municipality : '');
+      let position = point;
+      if (spaceCounts) {
+        const screenPoint = point.map((value, axis) => value * scale + offset[axis]);
+        const placed = placeCountMarker(screenPoint, occupied);
+        occupied.push({ point: placed, clearance: 25 });
+        if (placed !== screenPoint) {
+          position = placed.map((value, axis) => (value - offset[axis]) / scale);
+          facilityLeaders.append(svg('line', {
+            x1: point[0], y1: point[1], x2: position[0], y2: position[1],
+          }));
+        }
+      }
       const marker = svg('g', {
-        class: 'facility-marker ' + kind, transform: 'translate(' + point.join(' ') + ') scale(' + 1 / scale + ')',
+        class: 'facility-marker ' + kind, transform: 'translate(' + position.join(' ') + ') scale(' + 1 / scale + ')',
         role: 'button', tabindex: '0', 'aria-label': label,
       }, label);
       marker.append(svg('circle', { r: '12', class: 'facility-target' }));
-      if (grouped) {
+      if (grouped || !municipality) {
         const count = svg('text', { 'aria-hidden': 'true' });
         count.textContent = records.length;
         marker.append(svg('circle', { r: '11' }), count);
       } else {
-        const radius = municipality ? 9 : 6;
+        const radius = 9;
         marker.append(kind === 'post' ? svg('circle', { r: radius })
           : svg('rect', { x: -radius, y: -radius, width: 2 * radius, height: 2 * radius, transform: 'rotate(45) scale(.9)' }));
-        if (municipality) {
-          const number = svg('text', { 'aria-hidden': 'true' });
-          number.textContent = visibleSites.indexOf(record) + 1;
-          marker.append(number);
-        }
+        const number = svg('text', { 'aria-hidden': 'true' });
+        number.textContent = visibleSites.indexOf(record) + 1;
+        marker.append(number);
       }
       const describe = () => describeFacilities(records);
       marker.addEventListener('click', describe);
@@ -330,10 +405,11 @@ function createRegionalDetail() {
 
   function zoomTo([left, top, right, bottom]) {
     const scale = Math.min(470 / (right - left), 395 / (bottom - top));
-    camera.style.setProperty('--focus-x', (280 - (left + right) / 2 * scale) + 'px');
-    camera.style.setProperty('--focus-y', (240 - (top + bottom) / 2 * scale) + 'px');
+    const offset = [280 - (left + right) / 2 * scale, 240 - (top + bottom) / 2 * scale];
+    camera.style.setProperty('--focus-x', offset[0] + 'px');
+    camera.style.setProperty('--focus-y', offset[1] + 'px');
     camera.style.setProperty('--focus-scale', scale);
-    return scale;
+    return { scale, offset };
   }
 
   function selectMunicipality(key) {
@@ -352,6 +428,7 @@ function createRegionalDetail() {
       !candidates.some(candidate => candidate.key === item.key))];
     const departmentName = departments.find(([id]) => id === department)?.[1];
     const regionName = regions.find(item => item.id === region.id).name;
+    mapBack.textContent = '← ' + (municipality && departmentName ? 'Departamento' : municipality || department ? 'Región' : 'País');
     territoryTitle.textContent = municipality ? municipality.name + ' · ' + (departmentName || regionName)
       : departmentName || regionName;
     setOptions(departmentControl, 'Todos los departamentos',
@@ -372,7 +449,7 @@ function createRegionalDetail() {
     const bounds = selectedShapes.length ? mapBounds(selectedShapes.flatMap(item => item.rings.flat()))
       : fallbackPoints.length ? mapBounds(fallbackPoints.flatMap(([x, y]) => [[x - 1, y - 1], [x + 1, y + 1]]))
       : region.bounds;
-    layer.scale = zoomTo(bounds);
+    Object.assign(layer, zoomTo(bounds));
     camera.dataset.drill = municipality || (department && selectedShapes.length) ? 'true' : 'false';
 
     for (const district of selectedShapes) {
@@ -393,26 +470,21 @@ function createRegionalDetail() {
       }
       municipalityLayer.append(shape);
     }
-    function belongs(site, district) {
-      if (district.rings && inBounds(site.point, district.bounds) && inRings(site.point, district.rings)) return true;
-      return site.municipality && (!site.department || site.department === district.department) &&
-        mapName(site.municipality) === mapName(district.name);
+    if (department || municipality) {
+      const districtsForAssignment = municipality && !available.includes(municipality)
+        ? [...available, municipality] : available;
+      layer.assignments = new Map(facilities.map(site => [site, districtForSite(site, districtsForAssignment)]));
     }
-    layer.visibleSites = municipality ? facilities.filter(site => belongs(site, municipality))
-      : department ? facilities.filter(site => site.department === department ||
-        available.some(item => belongs(site, item))) : facilities;
-    coverage.textContent = municipality ? (municipality.path ? 'Vista municipal' : 'Vista municipal · límite cartográfico no disponible')
-      : department ? 'Vista departamental · selecciona un municipio en el mapa o en la lista.'
+    layer.visibleSites = municipality ? facilities.filter(site => layer.assignments.get(site)?.key === municipality.key)
+      : department ? facilities.filter(site => site.department === department || layer.assignments.get(site)) : facilities;
+    coverage.textContent = municipality ? (municipality.path ? 'Vista municipal · el escenario sigue siendo regional.' : 'Vista municipal · límite cartográfico no disponible. El escenario sigue siendo regional.')
+      : department ? 'Vista departamental · el escenario sigue siendo regional.'
       : 'Vista regional · elige un departamento o selecciona un municipio.';
-    showFacilityStatus(layer.visibleSites, layer.context);
     if (municipality) {
       const list = document.createElement('ol');
       for (const site of layer.visibleSites) {
         const item = document.createElement('li');
-        const link = document.createElement('a');
-        link.href = site.source;
-        link.textContent = site.name;
-        item.append(link);
+        item.append(facilityLink(site, municipality.name, municipality.department || department || site.department));
         list.append(item);
       }
       const heading = document.createElement('h3');
@@ -432,6 +504,7 @@ function createRegionalDetail() {
     camera.dataset.drill = 'false';
     details.hidden = false;
     navigation.hidden = !region;
+    mapBack.hidden = !region;
     mapLegend.hidden = false;
     municipalSites.hidden = true;
     cajolaCard.hidden = true;
@@ -455,12 +528,11 @@ function createRegionalDetail() {
     const catalog = nationalHealthPromise;
     if (!region) {
       coverage.textContent = 'Vista nacional · selecciona una región para acercarte.';
-      showFacilityStatus(initial, layer.context);
       paintFacilities();
       const nationalSites = await catalog;
       if (activeLayer !== layer) return;
       if (nationalSites) mergeFacilities(layer.facilities, nationalSites);
-      showFacilityStatus(layer.facilities, nationalSites ? 'RMGIR y registros locales. Cobertura parcial.' : 'Selección local. RMGIR no disponible.');
+      layer.context = nationalSites ? 'RMGIR y registros locales. Cobertura parcial.' : 'Selección local. RMGIR no disponible.';
       reload.hidden = Boolean(nationalSites);
       paintFacilities();
       return;
@@ -496,7 +568,7 @@ function createRegionalDetail() {
     if (activeLayer !== layer) return;
     if (!sites) {
       layer.context = 'Selección local. La ampliación en línea no está disponible.';
-      showFacilityStatus(layer.visibleSites, layer.context);
+      paintFacilities();
       reload.hidden = false;
       return;
     }
@@ -530,6 +602,17 @@ function createRegionalDetail() {
       .find(item => item.key === municipalityControl.value);
     if (district) activeLayer.department = district.department;
     selectMunicipality(municipalityControl.value);
+  });
+  mapBack.addEventListener('click', () => {
+    if (activeLayer.municipality) {
+      selectMunicipality('');
+    } else if (activeLayer.department) {
+      activeLayer.department = null;
+      paintTerritory();
+    } else {
+      returnToCountry();
+      nationalButton.focus();
+    }
   });
   reload.addEventListener('click', () => show(activeId));
   function updateFilters() {

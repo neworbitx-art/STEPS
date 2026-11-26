@@ -13,10 +13,16 @@ function allocate(total, weights) {
 function buildPlan(config, regions) {
   const { prevalence, margin, deff, interview, attendance, domain, mode, invite, capacity, valid } = config;
   const expectedComplete = 1.96 ** 2 * prevalence * (1 - prevalence) * deff / margin ** 2;
-  const selectedPerDomain = Math.ceil(expectedComplete / (interview * attendance));
+  const { coverageRate = 0, projectedAdults = 0 } = config;
+  const weights = regions.map(region => region.population);
+  const coverageTarget = adults => Math.ceil(adults * coverageRate / 100000);
+  const selectedFor = target => Math.ceil(Math.max(expectedComplete, target) / (interview * attendance));
+  const regionalAdults = domain === 'regional' && coverageRate > 0 ? allocate(projectedAdults, weights) : [];
+  const coverageTargets = regionalAdults.map(coverageTarget);
+  const nationalTarget = coverageTarget(projectedAdults);
   const selected = domain === 'regional'
-    ? regions.map(() => selectedPerDomain)
-    : allocate(selectedPerDomain, regions.map(region => region.population));
+    ? regions.map((_, index) => selectedFor(coverageTargets[index] ?? 0))
+    : allocate(selectedFor(nationalTarget), weights);
 
   const interviewed = allocate(Math.round(selected.reduce((sum, n) => sum + n, 0) * interview), selected);
   const measured = allocate(Math.round(interviewed.reduce((sum, n) => sum + n, 0) * attendance), interviewed);
@@ -36,5 +42,11 @@ function buildPlan(config, regions) {
   const totals = Object.fromEntries(fields.map(field => [
     field, rows.reduce((sum, row) => sum + row[field], 0),
   ]));
-  return { rows, totals };
+  const coverageCompleteTarget = domain === 'regional'
+    ? coverageTargets.reduce((sum, target) => sum + target, 0)
+    : nationalTarget;
+  const exceedsPopulation = coverageRate > 0 && (domain === 'regional'
+    ? selected.some((count, index) => count > regionalAdults[index])
+    : totals.selected > projectedAdults);
+  return { rows, totals, coverageCompleteTarget, exceedsPopulation };
 }

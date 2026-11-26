@@ -35,12 +35,31 @@ tabs.forEach((tab, index) => {
 activateStep(0);
 track.hidden = false;
 
-if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  const clinic = document.querySelector('.clinic-scene');
-  const observer = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting) return;
-    clinic.classList.add('scene-entered');
-    observer.disconnect();
-  }, { threshold: .24 });
-  observer.observe(clinic);
+const depthScenes = [...document.querySelectorAll('.scene')];
+const reduceSceneMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let depthFrame = 0;
+
+function updateSceneDepth() {
+  depthFrame = 0;
+  if (reduceSceneMotion.matches) return;
+  const viewport = window.innerHeight;
+  const offsets = depthScenes.map(scene => {
+    const { top, height } = scene.getBoundingClientRect();
+    if (top >= viewport || top + height <= 0) return null;
+    const progress = (top + height / 2 - viewport / 2) / ((height + viewport) / 2);
+    return -progress * 5.5;
+  });
+  depthScenes.forEach((scene, index) => {
+    if (offsets[index] !== null) scene.style.setProperty('--scene-depth', offsets[index] + '%');
+  });
 }
+
+function requestSceneDepth() {
+  if (!depthFrame && !reduceSceneMotion.matches) depthFrame = requestAnimationFrame(updateSceneDepth);
+}
+
+window.addEventListener('scroll', requestSceneDepth, { passive: true });
+window.addEventListener('resize', requestSceneDepth);
+window.addEventListener('pageshow', requestSceneDepth);
+reduceSceneMotion.addEventListener('change', requestSceneDepth);
+requestSceneDepth();

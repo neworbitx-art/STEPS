@@ -13,7 +13,8 @@ let current = null;
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const mapLayer = document.querySelector('#map-regions');
-const detailMap = createRegionalDetail();
+const detailMap = createRegionalDetail(() => selectRegion(null));
+const regionName = document.querySelector('#map-region-name');
 const labelLayer = document.querySelector('#map-labels');
 document.querySelector('#map-country').setAttribute('d', mapCountryOutline);
 document.querySelector('#map-departments').setAttribute('d', mapDepartmentBorders);
@@ -21,6 +22,8 @@ const regionControls = [];
 
 function selectRegion(id) {
   selection = id;
+  regionName.hidden = true;
+  for (const control of regionControls) delete control.dataset.preview;
   showResults();
   detailMap.show(id);
 }
@@ -79,6 +82,24 @@ for (const region of regions) {
   marker.append(halo, disc, caption);
   labelLayer.append(marker);
   regionControls.push(button, area, marker);
+
+  function previewRegion(active) {
+    const preview = active && !selection;
+    area.dataset.preview = String(preview);
+    marker.dataset.preview = String(preview);
+    if (preview) {
+      regionName.textContent = region.name;
+      regionName.hidden = false;
+    } else if (regionName.textContent === region.name) {
+      regionName.hidden = true;
+    }
+  }
+  for (const control of [area, button]) {
+    control.addEventListener('pointerenter', () => previewRegion(true));
+    control.addEventListener('pointerleave', () => previewRegion(false));
+    control.addEventListener('focus', () => previewRegion(true));
+    control.addEventListener('blur', () => previewRegion(false));
+  }
 }
 
 nationalButton.addEventListener('click', () => selectRegion(null));
@@ -87,6 +108,9 @@ function readConfig() {
   const values = form.elements;
   return {
     domain: values.domain.value, mode: values.mode.value, deff: values.deff.valueAsNumber,
+    year: Number(values.year.value),
+    coverageRate: values.coverageRate.valueAsNumber,
+    projectedAdults: populationProjections[values.year.value].adults,
     indicator: values.indicator.selectedOptions[0].textContent,
     prevalenceBasis: values.indicator.value === 'conservador' ? 'Supuesto conservador' : 'Supuesto ingresado',
     prevalence: values.prevalence.valueAsNumber / 100, margin: values.margin.valueAsNumber / 100,
@@ -98,7 +122,13 @@ function readConfig() {
 }
 
 function refresh() {
-  const { indicator, prevalence, mode: modeField } = form.elements;
+  const { indicator, prevalence, year, mode: modeField } = form.elements;
+  const projection = populationProjections[year.value];
+  for (const field of ['total', 'adults']) {
+    document.querySelector('#projection-' + field).textContent = format.format(projection[field]);
+  }
+  document.querySelector('#projection-total-label').textContent = 'Población nacional proyectada · ' + year.value;
+  document.querySelector('#projection-adults-label').textContent = 'Población nacional de 18 a 69 años · ' + year.value;
   const conservative = indicator.value === 'conservador';
   prevalence.readOnly = conservative;
   if (conservative) prevalence.value = 50;
@@ -142,8 +172,19 @@ function showResults() {
     : 'Dominio nacional. Las metas regionales son operativas.';
   document.querySelector('#summary').textContent = [
     region?.departmentNames.join(', '), row ? domainLabel : 'Escenario pendiente de cálculo.',
+    region && 'Los filtros de departamento y municipio solo cambian la vista del mapa.',
   ].filter(Boolean).join(' · ');
-  for (const field of ['population', 'gap', 'step1', 'step2', 'step3']) {
+  document.querySelector('#scenario-basis').textContent = !row ? 'Escenario pendiente de cálculo.'
+    : current.config.coverageRate > 0
+      ? 'Año ' + current.config.year + ' · Se aplica la mayor meta entre precisión y cobertura.'
+      : 'Año ' + current.config.year + ' · Muestra calculada por precisión. El año actualiza la población de referencia.';
+  document.querySelector('#scenario-coverage').textContent = current?.config.coverageRate
+    ? 'La meta total por cobertura es de ' + format.format(current.coverageCompleteTarget) +
+      ' tamizajes. Se aplica la meta mayor entre precisión y cobertura.' +
+      (current.config.domain === 'regional' ? ' El reparto de la proyección nacional usa las proporciones del Censo 2018.' : '') +
+      (current.exceedsPopulation ? ' Con la participación ingresada, la selección requerida supera la población adulta de al menos un dominio.' : '')
+    : '';
+  for (const field of ['population', 'step1', 'step2', 'step3']) {
     document.querySelector('#result-' + field).textContent = row ? format.format(row[field]) : '—';
   }
   document.querySelector('#result-sample').textContent = row ? format.format(row.selected) : '—';
@@ -171,13 +212,18 @@ exportButton.addEventListener('click', () => {
     'PASO_3_VALIDO', 'BRECHA_CUPOS', 'MODALIDAD_PASO_3', 'PREVALENCIA_PROP',
     'ERROR_ABSOLUTO_PROP', 'DEFF', 'ENTREVISTA_PROP', 'PASO_2_PROP', 'INVITAR_PASO_3_PROP',
     'CAPACIDAD_TOTAL_PASO_3', 'VALIDAS_PASO_3_PROP', 'INDICADOR_DISENO', 'ORIGEN_SUPUESTO_PREVALENCIA',
+    'TAMIZAJES_META_POR_100000_ADULTOS', 'META_TOTAL_TAMIZAJES_POR_COBERTURA',
+    'ANIO_OPERATIVO', 'FUENTE_PROYECCION', 'POBLACION_NACIONAL_PROYECTADA', 'POBLACION_NACIONAL_18_69_PROYECTADA',
   ];
-  const data = [...rows, { ...totals, name: 'Total nacional', departmentNames: [] }].map(row => [
+  const projection = populationProjections[config.year];
+  const data = [...rows, { ...totals, name: 'Total nacional', departmentNames: [] }].map((row, index) => [
     row.name, row.departmentNames.join(' | '), config.domain === 'regional' ? '8 regiones' : 'Nacional',
     'INE Guatemala · Censo 2018 · cuadro A4.1', row.population, row.selected, row.step1, row.step2,
     row.requested, row.booked, row.step3, row.gap, form.elements.mode.selectedOptions[0].textContent,
     config.prevalence, config.margin, config.deff, config.interview, config.attendance,
-    config.invite, config.capacity, config.valid, config.indicator, config.prevalenceBasis,
+    config.invite, config.capacity, config.valid, config.indicator, config.prevalenceBasis, config.coverageRate,
+    index === rows.length ? current.coverageCompleteTarget : '', config.year,
+    ...(index === rows.length ? [populationProjectionSource, projection.total, projection.adults] : ['', '', '']),
   ]);
   const csv = [headings, ...data].map(row => row.map(csvCell).join(',')).join('\r\n');
   const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
@@ -193,17 +239,3 @@ form.addEventListener('input', refresh);
 form.addEventListener('reset', () => requestAnimationFrame(refresh));
 refresh();
 detailMap.show(null);
-
-const tableauReference = document.querySelector('#mapa-tableau');
-
-function loadTableauReference() {
-  if (!tableauReference.open) return;
-  const frame = tableauReference.querySelector('iframe');
-  if (!frame.hasAttribute('src')) frame.src = frame.dataset.src;
-}
-
-document.querySelector('#open-tableau-map').addEventListener('click', () => {
-  tableauReference.open = true;
-});
-tableauReference.addEventListener('toggle', loadTableauReference);
-loadTableauReference();
